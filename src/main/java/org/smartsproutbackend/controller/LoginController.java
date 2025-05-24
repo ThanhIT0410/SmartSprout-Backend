@@ -1,6 +1,5 @@
 package org.smartsproutbackend.controller;
 
-import jakarta.servlet.http.HttpServletRequest;
 import org.smartsproutbackend.dto.LoginRequest;
 import org.smartsproutbackend.service.TokenService;
 import org.smartsproutbackend.service.UserLoginService;
