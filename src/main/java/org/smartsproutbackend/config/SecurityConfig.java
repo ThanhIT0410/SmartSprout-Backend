@@ -18,7 +18,7 @@ public class SecurityConfig {
         http
                 .csrf().disable()
                 .authorizeHttpRequests()
-                .requestMatchers(HttpMethod.POST, "/api/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/login/auth").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .formLogin().disable();

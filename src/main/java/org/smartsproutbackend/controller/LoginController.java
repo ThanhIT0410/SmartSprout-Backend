@@ -1,7 +1,8 @@
 package org.smartsproutbackend.controller;
 
-import org.smartsproutbackend.dto.DeviceRequestByUsername;
+import jakarta.servlet.http.HttpServletRequest;
 import org.smartsproutbackend.dto.LoginRequest;
+import org.smartsproutbackend.service.TokenService;
 import org.smartsproutbackend.service.UserLoginService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,19 +17,31 @@ public class LoginController {
     @Autowired
     private UserLoginService userLoginService;
 
+    @Autowired
+    private TokenService tokenService;
+
+    /**
+     *
+     * @param loginRequest (username, password)
+     * @return token
+     */
     @PostMapping("/auth")
-    public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
-        boolean isAuthenticated = userLoginService.authenticate(loginRequest.getUsername(), loginRequest.getPassword());
-        if (isAuthenticated) {
-            return ResponseEntity.ok("Login successful");
-        }
-        else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
-        }
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+        return userLoginService
+                .authenticate(loginRequest.getUsername(), loginRequest.getPassword())
+                .map(token -> ResponseEntity.ok(Map.of("token", token)))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid username or password")));
     }
 
-    @PostMapping("/devices")
-    public Map<String, String> getDevices(@RequestBody DeviceRequestByUsername deviceRequestByUsername) {
-        return userLoginService.findDevicePairs(deviceRequestByUsername.getUsername());
+    /**
+     *
+     * @param authHeader request with header {"Autorization": 'Bearer ${token}'}
+     * @return map of (deviceName, topic)
+     */
+    @GetMapping("/devices")
+    public ResponseEntity<Map<String, String>> getDevices(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
+        String username = tokenService.extractUsername(token);
+        return ResponseEntity.ok(userLoginService.findDevicePairs(username));
     }
 }

@@ -17,6 +17,9 @@ import java.util.stream.Collectors;
 public class UserLoginService {
 
     @Autowired
+    private TokenService tokenService;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -25,13 +28,16 @@ public class UserLoginService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public boolean authenticate(String username, String password) {
+    public Optional<String> authenticate(String username, String password) {
         Optional<User> userOptional = userRepository.findByUsername(username);
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            return passwordEncoder.matches(password, user.getPassword());
+            if (passwordEncoder.matches(password, user.getPassword())) {
+                String token = tokenService.generateToken(user);
+                return Optional.of(token);
+            }
         }
-        return false;
+        return Optional.empty();
     }
 
     public Map<String, String> findDevicePairs(String username) {
