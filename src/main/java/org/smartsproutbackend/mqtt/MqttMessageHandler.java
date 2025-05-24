@@ -7,41 +7,44 @@ import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.smartsproutbackend.entity.DataRecord;
 import org.smartsproutbackend.repository.DataRecordRepository;
+import org.smartsproutbackend.service.WebSocketPushService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class MqttMessageHandler implements MqttCallback {
 
-    @Autowired
-    private DataRecordRepository dataRecordRepository;
+    private final Map<String, Deque<String>> latestMessages = new ConcurrentHashMap<>();
 
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
+    private final WebSocketPushService webSocketPushService;
 
-    private final Gson gson = new Gson();
+    private final int MAXIMUM_MESSAGES = 10;
+
+    public MqttMessageHandler(WebSocketPushService webSocketPushService) {
+        this.webSocketPushService = webSocketPushService;
+    }
 
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
         String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
 
-        JsonObject jsonObject = gson.fromJson(payload, JsonObject.class);
-        double temperature = jsonObject.get("temperature").getAsDouble();
-        double airHumidity = jsonObject.get("airHumidity").getAsDouble();
-        double soilHumidity = jsonObject.get("soilHumidity").getAsDouble();
-        LocalDateTime currentDateTime = LocalDateTime.now();
+        latestMessages.putIfAbsent(topic, new LinkedList<>());
+        Deque<String> queue = latestMessages.get(topic);
+        synchronized (queue) {
+            if (queue.size() >= MAXIMUM_MESSAGES) queue.pollFirst();
+            queue.offerLast(payload);
+        }
 
-        DataRecord dataRecord = new DataRecord();
-        dataRecord.setTemperature(temperature);
-        dataRecord.setAirHumidity(airHumidity);
-        dataRecord.setSoilHumidity(soilHumidity);
-        dataRecord.setTimestamp(currentDateTime);
-        dataRecordRepository.save(dataRecord);
-        messagingTemplate.convertAndSend("/topic/"+topic, gson.toJson(dataRecord));
+        webSocketPushService.sendToTopic(topic, payload);
     }
 
     @Override
