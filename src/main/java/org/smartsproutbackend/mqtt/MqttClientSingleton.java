@@ -45,6 +45,12 @@ public class MqttClientSingleton {
         mqttClient.subscribe(topic);
     }
 
+    public void unsubscribeToTopic(String topic) throws MqttException {
+        if (mqttClient.isConnected()) {
+            mqttClient.unsubscribe(topic);
+        }
+    }
+
     public boolean isConnected() {
         return mqttClient != null && mqttClient.isConnected();
     }
