@@ -10,3 +10,4 @@ public interface DevicePairRepository extends JpaRepository<DevicePair, Long> {
     List<DevicePair> findByUserId(Long userId);
     Optional<DevicePair> findByTopic(String topic);
 }
+
