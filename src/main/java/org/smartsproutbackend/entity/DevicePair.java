@@ -46,4 +46,3 @@ public class DevicePair {
     public void setTopic(String topic) {
         this.topic = topic;
     }
-}
