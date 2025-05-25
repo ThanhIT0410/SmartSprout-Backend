@@ -47,8 +47,4 @@ public class UserRegisterService {
         devicePairRepository.save(pair);
         return topic;
     }
-
-    private String sanitize(String name) {
-        return name.trim().toLowerCase().replaceAll("[^a-z0-9]+", "-");
-    }
 }
