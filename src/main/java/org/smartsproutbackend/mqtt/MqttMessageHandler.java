@@ -14,10 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -45,6 +42,13 @@ public class MqttMessageHandler implements MqttCallback {
         }
 
         webSocketPushService.sendToTopic(topic, payload);
+    }
+
+    public List<String> getRecentMessages(String topic) {
+        Deque<String> queue = latestMessages.getOrDefault(topic, new LinkedList<>());
+        synchronized (queue) {
+            return new ArrayList<>(queue);
+        }
     }
 
     @Override

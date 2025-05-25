@@ -1,40 +1,66 @@
 package org.smartsproutbackend.controller;
 
-import org.smartsproutbackend.dto.DeviceRequestByTopic;
-import org.smartsproutbackend.entity.DataRecord;
-import org.smartsproutbackend.entity.DevicePair;
-import org.smartsproutbackend.repository.DataRecordRepository;
-import org.smartsproutbackend.repository.DevicePairRepository;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.smartsproutbackend.mqtt.ClientTopicRegistry;
+import org.smartsproutbackend.mqtt.MqttClientSingleton;
+import org.smartsproutbackend.mqtt.MqttMessageHandler;
+import org.smartsproutbackend.service.AccessControlService;
+import org.smartsproutbackend.service.TokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/data-streaming")
 public class DataStreamController {
 
     @Autowired
-    private DevicePairRepository devicePairRepository;
+    private TokenService tokenService;
 
     @Autowired
-    private DataRecordRepository dataRecordRepository;
+    private MqttClientSingleton mqttClientSingleton;
 
-    @PostMapping("/start")
-    public List<DataRecord> startDataStream(@RequestBody DeviceRequestByTopic deviceRequestByTopic) {
-        String topic = deviceRequestByTopic.getTopic();
+    @Autowired
+    private MqttMessageHandler mqttMessageHandler;
 
-        Optional<DevicePair> devicePairOptional = devicePairRepository.findByTopic(topic);
-        if (devicePairOptional.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Topic not found");
+    @Autowired
+    private AccessControlService accessControlService;
+
+    /**
+     *
+     * @param topic
+     * @param authHeader request with header {"Autorization": 'Bearer ${token}'}
+     * @return subscribe to topic
+     * @throws MqttException
+     */
+    @PostMapping("/subscribe")
+    public ResponseEntity<?> subscribe(@RequestParam String topic, @RequestHeader("Authorization") String authHeader) throws MqttException {
+        String token = authHeader.replace("Bearer ", "");
+        String username = tokenService.extractUsername(token);
+        if (!accessControlService.userHasAccessToTopic(username, topic)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You do not have access to this topic");
         }
-        Long deviceId = devicePairOptional.get().getDeviceId();
-        return dataRecordRepository.findTop10ByDeviceIdOrderByTimestampDesc(deviceId);
+        ClientTopicRegistry.registerTopic(topic, username);
+        mqttClientSingleton.subscribeToTopic(topic);
+        return ResponseEntity.ok("Subscribed to topic: " + topic);
+    }
+
+    /**
+     *
+     * @param topic
+     * @param authHeader request with header {"Autorization": 'Bearer ${token}'}
+     * @return recent 10 message from this topic
+     */
+    @GetMapping("/recent")
+    public ResponseEntity<?> getRecent(@RequestParam String topic, @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
+        String username = tokenService.extractUsername(token);
+        if (!accessControlService.userHasAccessToTopic(username, topic)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You do not have access to this topic");
+        }
+        return ResponseEntity.ok(mqttMessageHandler.getRecentMessages(topic));
     }
 }
