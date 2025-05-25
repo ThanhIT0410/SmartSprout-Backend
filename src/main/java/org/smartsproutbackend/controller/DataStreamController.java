@@ -46,6 +46,13 @@ public class DataStreamController {
         return ResponseEntity.ok("Subscribed to topic: " + topic);
     }
 
+    /**
+     *
+     * @param topic
+     * @param authHeader request with header {"Autorization": 'Bearer ${token}'}
+     * @return unsubscribe to topic
+     * @throws MqttException
+     */
     @PostMapping("/unsubscribe")
     public ResponseEntity<?> unsubscribe(@RequestParam String topic, @RequestHeader("Authorization") String authHeader) throws MqttException {
         String token = authHeader.replace("Bearer ", "");
