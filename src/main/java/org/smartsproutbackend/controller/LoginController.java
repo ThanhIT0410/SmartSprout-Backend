@@ -1,5 +1,6 @@
 package org.smartsproutbackend.controller;
 
+import jakarta.validation.Valid;
 import org.smartsproutbackend.dto.LoginRequest;
 import org.smartsproutbackend.service.TokenService;
 import org.smartsproutbackend.service.UserLoginService;
@@ -25,7 +26,7 @@ public class LoginController {
      * @return token
      */
     @PostMapping("/auth")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
         return userLoginService
                 .authenticate(loginRequest.getUsername(), loginRequest.getPassword())
                 .map(token -> ResponseEntity.ok(Map.of("token", token)))
