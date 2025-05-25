@@ -22,6 +22,12 @@ public class RegisterController {
     @Value("${esp.secret}")
     private String espSecret;
 
+    /**
+     *
+     * @param secret esp8266 secret key in application.properties
+     * @param registerRequest (String email, String password)
+     * @return ok
+     */
     @PostMapping("/new-user")
     public ResponseEntity<?> registerUser(@RequestHeader("Esp8266") String secret, @Valid @RequestBody RegisterRequest registerRequest) {
         if (!secret.equals(espSecret)) {
@@ -34,6 +40,12 @@ public class RegisterController {
         return ResponseEntity.ok("Registered Successfully");
     }
 
+    /**
+     *
+     * @param secret esp8266 secret key in application.properties
+     * @param addDeviceRequest (String email, String deviceName, String deviceId
+     * @return String topic
+     */
     @PostMapping("/new-device")
     public ResponseEntity<?> registerDevice(@RequestHeader("Esp8266") String secret, @Valid @RequestBody AddDeviceRequest addDeviceRequest) {
         if (!secret.equals(espSecret)) {

@@ -31,7 +31,7 @@ public class DataStreamController {
     /**
      *
      * @param topic
-     * @param authHeader request with header {"Autorization": 'Bearer ${token}'}
+     * @param authHeader request with header {"Authorization": 'Bearer ${token}'}
      * @return subscribe to topic
      * @throws MqttException
      */
@@ -49,7 +49,7 @@ public class DataStreamController {
     /**
      *
      * @param topic
-     * @param authHeader request with header {"Autorization": 'Bearer ${token}'}
+     * @param authHeader request with header {"Authorization": 'Bearer ${token}'}
      * @return unsubscribe to topic
      * @throws MqttException
      */
@@ -67,8 +67,8 @@ public class DataStreamController {
     /**
      *
      * @param topic
-     * @param authHeader request with header {"Autorization": 'Bearer ${token}'}
-     * @return recent 10 message from this topic
+     * @param authHeader request with header {"Authorization": 'Bearer ${token}'}
+     * @return list of recent 10 message from this topic
      */
     @GetMapping("/recent")
     public ResponseEntity<?> getRecent(@RequestParam String topic, @RequestHeader("Authorization") String authHeader) {
