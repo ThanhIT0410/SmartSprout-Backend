@@ -51,6 +51,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/login/auth").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/register/**").permitAll()
+                        .requestMatchers("/websocket/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
