@@ -1,5 +1,6 @@
 package org.smartsproutbackend.controller;
 
+import jakarta.validation.Valid;
 import org.smartsproutbackend.dto.LoginRequest;
 import org.smartsproutbackend.service.TokenService;
 import org.smartsproutbackend.service.UserLoginService;
@@ -21,11 +22,11 @@ public class LoginController {
 
     /**
      *
-     * @param loginRequest (username, password)
-     * @return token
+     * @param loginRequest (String email, String password)
+     * @return String token
      */
     @PostMapping("/auth")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
         return userLoginService
                 .authenticate(loginRequest.getUsername(), loginRequest.getPassword())
                 .map(token -> ResponseEntity.ok(Map.of("token", token)))
@@ -34,8 +35,8 @@ public class LoginController {
 
     /**
      *
-     * @param authHeader request with header {"Autorization": 'Bearer ${token}'}
-     * @return map of (deviceName, topic)
+     * @param authHeader request with header {"Authorization": 'Bearer ${token}'}
+     * @return map of (String deviceName, String topic)
      */
     @GetMapping("/devices")
     public ResponseEntity<Map<String, String>> getDevices(@RequestHeader("Authorization") String authHeader) {

@@ -10,16 +10,17 @@ public class DevicePair {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long deviceId;
+    private Long pairId;
+    private String deviceId;
     private Long userId;
     private String deviceName;
     private String topic;
 
-    public Long getDeviceId() {
+    public String getDeviceId() {
         return deviceId;
     }
 
-    public void setDeviceId(Long deviceId) {
+    public void setDeviceId(String deviceId) {
         this.deviceId = deviceId;
     }
 
@@ -46,3 +47,12 @@ public class DevicePair {
     public void setTopic(String topic) {
         this.topic = topic;
     }
+
+    public Long getPairId() {
+        return pairId;
+    }
+
+    public void setPairId(Long pairId) {
+        this.pairId = pairId;
+    }
+}

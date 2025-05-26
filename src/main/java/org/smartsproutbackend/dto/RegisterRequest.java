@@ -3,9 +3,9 @@ package org.smartsproutbackend.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
-public class LoginRequest {
-    @Email(message = "Username must be a valid email")
+public class RegisterRequest {
     @NotBlank(message = "Username is required")
+    @Email(message = "Username must be a valid email")
     private String username;
 
     @NotBlank(message = "Password is required")
