@@ -32,19 +32,19 @@ public class MqttMessageHandler implements MqttCallback {
 
     private static class ParsedMessage {
         public LocalDateTime timestamp;
-        public int temperature;
-        public int humidity;
-        public int haha;
+        public float air;
+        public float temp;
+        public float soil;
 
         public ParsedMessage(String json) throws IOException {
             ObjectMapper mapper = new ObjectMapper();
-            Map<String, Integer> data = mapper.readValue(json, new TypeReference<>() {});
-            int haha = data.getOrDefault("haha", 0);
-            int temperature = data.getOrDefault("temperature", 0);
-            int humidity = data.getOrDefault("humidity", 0);
-            this.temperature = temperature;
-            this.humidity = humidity;
-            this.haha = haha;
+            Map<String, Number> data = mapper.readValue(json, new TypeReference<>() {});
+            float air = data.getOrDefault("air", 0).floatValue();
+            float temp = data.getOrDefault("temp", 0).floatValue();
+            float soil = data.getOrDefault("soil", 0).floatValue();
+            this.air = air;
+            this.temp = temp;
+            this.soil = soil;
 
             LocalDateTime now = LocalDateTime.now();
             int roundedHour = (now.getHour() / 3) * 3;
@@ -95,9 +95,9 @@ public class MqttMessageHandler implements MqttCallback {
                     .filter(msg -> msg != null && !msg.isExpired(MESSAGE_TIME_LIMIT))
                     .map(msg -> {
                         Map<String, Object> result = new HashMap<>();
-                        result.put("temperature", msg.temperature);
-                        result.put("humidity", msg.humidity);
-                        result.put("haha", msg.haha);
+                        result.put("air", msg.air);
+                        result.put("temp", msg.temp);
+                        result.put("soil", msg.soil);
                         result.put("timestamp", msg.timestamp.toString());
                         return result;
                     })
