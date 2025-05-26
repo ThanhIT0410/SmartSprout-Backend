@@ -45,7 +45,10 @@ public class MqttMessageHandler implements MqttCallback {
             this.temperature = temperature;
             this.humidity = humidity;
             this.haha = haha;
-            this.timestamp = LocalDateTime.now();
+
+            LocalDateTime now = LocalDateTime.now();
+            int roundedHour = (now.getHour() / 3) * 3;
+            this.timestamp = LocalDateTime.of(now.toLocalDate(), LocalTime.of(roundedHour, 0));
         }
 
         public boolean isExpired(long timeLimit) {
@@ -68,11 +71,9 @@ public class MqttMessageHandler implements MqttCallback {
 
         webSocketPushService.sendToTopic(topic, payload);
 
-        LocalDateTime now = parsedMessage.timestamp;
-        int roundedHours = (now.getHour() / 3) * 3;
-        LocalDateTime rounded = LocalDateTime.of(now.toLocalDate(), LocalTime.of(roundedHours, 0));
-        long diffMillis = Duration.between(rounded, now).toMillis();
-        if (diffMillis > 60_000) return;
+        long nowMillis = System.currentTimeMillis();
+        long tsMillis = parsedMessage.timestamp.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        if (nowMillis - tsMillis > 60_000) return;
 
         latestMessages.putIfAbsent(topic, new LinkedList<>());
         Deque<ParsedMessage> queue = latestMessages.get(topic);
