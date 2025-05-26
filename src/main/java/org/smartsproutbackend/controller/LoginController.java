@@ -44,4 +44,23 @@ public class LoginController {
         String username = tokenService.extractUsername(token);
         return ResponseEntity.ok(userLoginService.findDevicePairs(username));
     }
+
+    /**
+     *
+     * @param authHeader request with header {"Authorization": 'Bearer ${token}'}
+     * @param topic topic of the device to delete
+     * @return success or error message
+     */
+    @DeleteMapping("/devices")
+    public ResponseEntity<?> deleteDevice(@RequestHeader("Authorization") String authHeader, @RequestParam String topic) {
+        String token = authHeader.replace("Bearer ", "");
+        String username = tokenService.extractUsername(token);
+
+        boolean success = userLoginService.deleteDevice(username, topic);
+        if (success) {
+            return ResponseEntity.ok(Map.of("message", "Device deleted successfully"));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Device not found or unauthorized"));
+        }
+    }
 }
