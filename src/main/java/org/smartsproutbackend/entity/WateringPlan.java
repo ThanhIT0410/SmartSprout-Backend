@@ -1,0 +1,105 @@
+package org.smartsproutbackend.entity;
+
+import jakarta.persistence.*;
+import org.smartsproutbackend.enums.RepeatType;
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.Set;
+
+@Entity
+public class WateringPlan {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long planId;
+
+    private LocalTime time;
+
+    @Enumerated(EnumType.STRING)
+    private RepeatType repeatType;
+
+    private Integer intervalDays; // Nếu repeatType = EVERY_X_DAYS
+
+    @ElementCollection
+    @Enumerated(EnumType.STRING)
+    private Set<DayOfWeek> weekDays;
+
+    private int duration;
+    private boolean active;
+    private LocalDate startDate;
+    private LocalDate lastExecutedDate;
+
+    public Long getPlanId() {
+        return planId;
+    }
+
+    public void setPlanId(Long planId) {
+        this.planId = planId;
+    }
+
+    public LocalTime getTime() {
+        return time;
+    }
+
+    public void setTime(LocalTime time) {
+        this.time = time;
+    }
+
+    public RepeatType getRepeatType() {
+        return repeatType;
+    }
+
+    public void setRepeatType(RepeatType repeatType) {
+        this.repeatType = repeatType;
+    }
+
+    public Integer getIntervalDays() {
+        return intervalDays;
+    }
+
+    public void setIntervalDays(Integer intervalDays) {
+        this.intervalDays = intervalDays;
+    }
+
+    public Set<DayOfWeek> getWeekDays() {
+        return weekDays;
+    }
+
+    public void setWeekDays(Set<DayOfWeek> weekDays) {
+        this.weekDays = weekDays;
+    }
+
+    public int getDuration() {
+        return duration;
+    }
+
+    public void setDuration(int duration) {
+        this.duration = duration;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public LocalDate getLastExecutedDate() {
+        return lastExecutedDate;
+    }
+
+    public void setLastExecutedDate(LocalDate lastExecutedDate) {
+        this.lastExecutedDate = lastExecutedDate;
+    }
+}
