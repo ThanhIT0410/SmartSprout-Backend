@@ -56,7 +56,7 @@ public class MqttMessageHandler implements MqttCallback {
     }
 
     @Override
-    public void messageArrived(String topic, MqttMessage message) throws Exception {
+    public void messageArrived(String topic, MqttMessage message) {
         String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
 
         ParsedMessage parsedMessage;
