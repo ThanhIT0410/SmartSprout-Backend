@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -26,14 +27,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors().and()
-                .csrf().disable()
-                .authorizeHttpRequests()
-                .requestMatchers(HttpMethod.POST, "/api/login/auth").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/register/**").permitAll()
-                .anyRequest().authenticated()
-                .and()
-                .formLogin().disable();
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> {}) // enable CORS
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.POST, "/api/login/auth").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/register/**").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .formLogin(AbstractHttpConfigurer::disable);
 
         return http.build();
     }
