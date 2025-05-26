@@ -25,7 +25,7 @@ public class MqttMessageHandler implements MqttCallback {
     private final WebSocketPushService webSocketPushService;
 
     private final int MAXIMUM_MESSAGES = 10;
-    private final int MESSAGE_TIME_LIMIT = 60_000;
+    private final int MESSAGE_TIME_LIMIT = 10_800_000; // 3 giờ
 
     public MqttMessageHandler(WebSocketPushService webSocketPushService) {
         this.webSocketPushService = webSocketPushService;
@@ -111,7 +111,6 @@ public class MqttMessageHandler implements MqttCallback {
             while (true) {
                 try {
                     Thread.sleep(300_000);
-                    long now = System.currentTimeMillis();
                     for (Deque<ParsedMessage> queue : latestMessages.values()) {
                         synchronized (queue) {
                             while (!queue.isEmpty() && queue.peekFirst().isExpired(MESSAGE_TIME_LIMIT)) {
