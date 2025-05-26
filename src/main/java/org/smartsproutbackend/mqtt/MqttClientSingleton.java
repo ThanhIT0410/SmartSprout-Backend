@@ -51,6 +51,13 @@ public class MqttClientSingleton {
         }
     }
 
+    public void publishToTopic(String topic, String payload) throws MqttException {
+        if (!mqttClient.isConnected()) init();
+        MqttMessage message = new MqttMessage(payload.getBytes());
+        message.setQos(2);
+        mqttClient.publish(topic, message);
+    }
+
     public boolean isConnected() {
         return mqttClient != null && mqttClient.isConnected();
     }

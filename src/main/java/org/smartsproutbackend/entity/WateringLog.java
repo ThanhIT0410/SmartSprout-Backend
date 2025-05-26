@@ -18,7 +18,6 @@ public class WateringLog {
     private String deviceName;
     private LocalDateTime executeTime;
     private int duration;
-    private String source;
 
     public int getLogId() {
         return logId;
@@ -58,13 +57,5 @@ public class WateringLog {
 
     public void setDuration(int duration) {
         this.duration = duration;
-    }
-
-    public String getSource() {
-        return source;
-    }
-
-    public void setSource(String source) {
-        this.source = source;
     }
 }
