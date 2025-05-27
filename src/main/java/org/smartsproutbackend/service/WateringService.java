@@ -19,9 +19,20 @@ public class WateringService {
 
     public void triggerWatering(String deviceId, String deviceName, int duration) {
         try {
-            String payload = String.format("{\"action\":\"start\",\"duration\":%d}", duration);
-            mqttClientSingleton.publishToTopic("watering/" + deviceId, payload);
+            String topic = "watering/" + deviceId;
+            String startPayload = "{\"action\":\"start\"}";
+            mqttClientSingleton.publishToTopic(topic, startPayload);
             logWatering(deviceId, deviceName, duration);
+            new Thread(() -> {
+                try {
+                    Thread.sleep(duration * 60_000L);
+                    String endPayload = "{\"action\":\"end\"}";
+                    mqttClientSingleton.publishToTopic(topic, endPayload);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }).start();
+
         } catch (Exception e) {
             throw new RuntimeException("Error triggering watering", e);
         }
