@@ -76,7 +76,7 @@ public class MqttClientSingleton {
     public void publishToTopic(String topic, String payload) throws MqttException {
         if (!mqttClient.isConnected()) init();
         MqttMessage message = new MqttMessage(payload.getBytes());
-        message.setQos(2);
+        message.setQos(1);
         mqttClient.publish(topic, message);
     }
 
