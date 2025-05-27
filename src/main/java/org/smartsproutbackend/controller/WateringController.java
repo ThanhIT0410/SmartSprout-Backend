@@ -14,7 +14,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @Controller
 @RequestMapping("/api/watering")
@@ -32,6 +31,12 @@ public class WateringController {
     @Autowired
     private AccessControlService accessControlService;
 
+    /**
+     *
+     * @param authHeader request with header {"Authorization": 'Bearer ${token}'}
+     * @param request (String deviceId, String deviceName, int duration)
+     * @return watering
+     */
     @PostMapping("/immediate")
     public ResponseEntity<String> immediatelyTriggerWatering(@RequestHeader("Authorization") String authHeader,
                                                              @RequestBody WateringTriggerRequest request) {
@@ -54,6 +59,14 @@ public class WateringController {
         }
     }
 
+    /**
+     *
+     * @param authHeader request with header {"Authorization": 'Bearer ${token}'}
+     * @param request (String deviceId, String deviceName, LocalTime time, RepeatType repeatType.
+     *                  private Integer intervalDays, private Set<DayOfWeek> weekDays, int duration;
+     *                  private boolean active;
+     * @return new plan
+     */
     @PostMapping("/new-plan")
     public ResponseEntity<?> scheduleWatering(@RequestHeader("Authorization") String authHeader,
                                               @RequestBody WateringPlanRequest request) {
@@ -68,6 +81,15 @@ public class WateringController {
 
     }
 
+    /**
+     *
+     * @param authHeader request with header {"Authorization": 'Bearer ${token}'}
+     * @param planId
+     * @param request (String deviceId, String deviceName, LocalTime time, RepeatType repeatType.
+     *      *                  private Integer intervalDays, private Set<DayOfWeek> weekDays, int duration;
+     *      *                  private boolean active;
+     * @return updated plan
+     */
     @PutMapping("/change-plan/{planId}")
     public ResponseEntity<?> changeSchedule(@RequestHeader("Authorization") String authHeader,
                                                        @PathVariable Long planId,
@@ -82,6 +104,12 @@ public class WateringController {
         return ResponseEntity.ok(plan);
     }
 
+    /**
+     *
+     * @param authHeader request with header {"Authorization": 'Bearer ${token}'}
+     * @param deviceId
+     * @return list of plans
+     */
     @GetMapping("/all-plan")
     public ResponseEntity<?> getAllPlans(@RequestHeader("Authorization") String authHeader,
                                                           @RequestParam String deviceId) {
