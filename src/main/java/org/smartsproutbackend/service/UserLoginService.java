@@ -48,4 +48,24 @@ public class UserLoginService {
                 .stream()
                 .toList();
     }
+
+    public boolean deleteDevice(String username, String topic) {
+        Optional<User> userOptional = userRepository.findByUsername(username);
+        if (userOptional.isEmpty()) {
+            return false;
+        }
+
+        Optional<DevicePair> devicePairOptional = devicePairRepository.findByTopic(topic);
+        if (devicePairOptional.isEmpty()) {
+            return false;
+        }
+
+        DevicePair devicePair = devicePairOptional.get();
+        if (!devicePair.getUserId().equals(userOptional.get().getUserId())) {
+            return false;
+        }
+
+        devicePairRepository.delete(devicePair);
+        return true;
+    }
 }
