@@ -2,12 +2,15 @@ package org.smartsproutbackend.controller;
 
 import jakarta.validation.Valid;
 import org.smartsproutbackend.dto.LoginRequest;
+import org.smartsproutbackend.entity.DevicePair;
 import org.smartsproutbackend.service.TokenService;
 import org.smartsproutbackend.service.UserLoginService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -36,10 +39,10 @@ public class LoginController {
     /**
      *
      * @param authHeader request with header {"Authorization": 'Bearer ${token}'}
-     * @return map of (String deviceName, String topic)
+     * @return map of DevicePair
      */
     @GetMapping("/devices")
-    public ResponseEntity<Map<String, String>> getDevices(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<List<DevicePair>> getDevices(@RequestHeader("Authorization") String authHeader) {
         String token = authHeader.replace("Bearer ", "");
         String username = tokenService.extractUsername(token);
         return ResponseEntity.ok(userLoginService.findDevicePairs(username));
