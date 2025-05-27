@@ -1,9 +1,15 @@
 package org.smartsproutbackend.mqtt;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.eclipse.paho.client.mqttv3.*;
+import org.smartsproutbackend.entity.DevicePair;
+import org.smartsproutbackend.repository.DevicePairRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class MqttClientSingleton {
@@ -22,6 +28,9 @@ public class MqttClientSingleton {
     @Value("${mqtt.password}")
     private String password;
 
+    @Autowired
+    private DevicePairRepository devicePairRepository;
+
     private final MqttMessageHandler mqttMessageHandler;
 
     public MqttClientSingleton(MqttMessageHandler mqttMessageHandler) {
@@ -30,14 +39,27 @@ public class MqttClientSingleton {
 
     @PostConstruct
     public void init() throws MqttException {
-        mqttClient = new MqttClient(brokerUrl, clientId);
-        MqttConnectOptions options = new MqttConnectOptions();
-        options.setCleanSession(true);
-        options.setUserName(username);
-        options.setPassword(password.toCharArray());
+        try {
+            mqttClient = new MqttClient(brokerUrl, clientId);
+            MqttConnectOptions options = new MqttConnectOptions();
+            options.setCleanSession(true);
+            options.setUserName(username);
+            options.setPassword(password.toCharArray());
 
-        mqttClient.connect(options);
-        mqttClient.setCallback(mqttMessageHandler);
+            mqttClient.connect(options);
+            mqttClient.setCallback(mqttMessageHandler);
+
+            List<String> topics = devicePairRepository.findAll()
+                    .stream()
+                    .map(DevicePair::getTopic)
+                    .toList();
+
+            for (String topic : topics) {
+                mqttClient.subscribe(topic, 0);
+            }
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
     }
 
     public void subscribeToTopic(String topic) throws MqttException {
@@ -53,5 +75,19 @@ public class MqttClientSingleton {
 
     public boolean isConnected() {
         return mqttClient != null && mqttClient.isConnected();
+    }
+
+    private void ensureConnected() throws MqttException {
+        if (mqttClient == null || !mqttClient.isConnected()) {
+            init();
+        }
+    }
+
+    @PreDestroy
+    public void cleanup() throws MqttException {
+        if (mqttClient != null && mqttClient.isConnected()) {
+            mqttClient.disconnect();
+            mqttClient.close();
+        }
     }
 }

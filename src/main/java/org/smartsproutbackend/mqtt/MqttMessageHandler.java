@@ -1,47 +1,94 @@
 package org.smartsproutbackend.mqtt;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.smartsproutbackend.entity.RecentMessage;
+import org.smartsproutbackend.repository.RecentMessageRepository;
 import org.smartsproutbackend.service.WebSocketPushService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
+import java.time.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Component
 public class MqttMessageHandler implements MqttCallback {
 
-    private final Map<String, Deque<String>> latestMessages = new ConcurrentHashMap<>();
+    @Autowired
+    private RecentMessageRepository recentMessageRepository;
 
-    private final WebSocketPushService webSocketPushService;
+    @Autowired
+    private WebSocketPushService webSocketPushService;
 
     private final int MAXIMUM_MESSAGES = 10;
-
-    public MqttMessageHandler(WebSocketPushService webSocketPushService) {
-        this.webSocketPushService = webSocketPushService;
-    }
+    private final int MESSAGE_TIME_LIMIT = 7_200_000; // 2 giờ
 
     @Override
-    public void messageArrived(String topic, MqttMessage message) throws Exception {
+    public void messageArrived(String topic, MqttMessage message) {
         String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
 
-        latestMessages.putIfAbsent(topic, new LinkedList<>());
-        Deque<String> queue = latestMessages.get(topic);
-        synchronized (queue) {
-            if (queue.size() >= MAXIMUM_MESSAGES) queue.pollFirst();
-            queue.offerLast(payload);
+        RecentMessage msg;
+        try {
+            msg = parseMessage(topic, payload);
+        } catch (Exception e) {
+            return;
         }
 
         webSocketPushService.sendToTopic(topic, payload);
+
+        long nowMillis = System.currentTimeMillis();
+        long tsMillis = msg.getTimestamp().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        if (nowMillis - tsMillis > 60_000) return;
+
+        recentMessageRepository.save(msg);
+
+        LocalDateTime cutoff = LocalDateTime.now().minus(Duration.ofMillis(MESSAGE_TIME_LIMIT));
+        recentMessageRepository.deleteByTopicAndTimestampBefore(topic, cutoff);
+
+        List<RecentMessage> allRecent = recentMessageRepository.findByTopicOrderByTimestampDesc(topic);
+        if (allRecent.size() > MAXIMUM_MESSAGES) {
+            List<RecentMessage> toDelete = allRecent.subList(MAXIMUM_MESSAGES, allRecent.size());
+            recentMessageRepository.deleteAll(toDelete);
+        }
     }
 
-    public List<String> getRecentMessages(String topic) {
-        Deque<String> queue = latestMessages.getOrDefault(topic, new LinkedList<>());
-        synchronized (queue) {
-            return new ArrayList<>(queue);
-        }
+    public List<Map<String, Object>> getRecentMessages(String topic) {
+        return recentMessageRepository.findByTopicOrderByTimestampDesc(topic)
+                .stream()
+                .map(msg -> {
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("air", msg.getAir());
+                    result.put("temp", msg.getTemp());
+                    result.put("soil", msg.getSoil());
+                    result.put("timestamp", msg.getTimestamp().toString());
+                    return result;
+                })
+                .collect(Collectors.toList());
+    }
+
+    private RecentMessage parseMessage(String topic, String json) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Number> data = mapper.readValue(json, new TypeReference<>() {});
+        float air = data.getOrDefault("air", 0).floatValue();
+        float temp = data.getOrDefault("temp", 0).floatValue();
+        float soil = data.getOrDefault("soil", 0).floatValue();
+
+        LocalDateTime now = LocalDateTime.now();
+        int roundedHour = (now.getHour() / 2) * 2;
+        LocalDateTime timestamp = LocalDateTime.of(now.toLocalDate(), LocalTime.of(roundedHour, 0));
+
+        RecentMessage msg = new RecentMessage();
+        msg.setTopic(topic);
+        msg.setAir(air);
+        msg.setTemp(temp);
+        msg.setSoil(soil);
+        msg.setTimestamp(timestamp);
+        return msg;
     }
 
     @Override
