@@ -27,4 +27,13 @@ public class AccessControlService {
         }
         return false;
     }
+
+    public boolean userHasAccessToDevice(String username, String deviceId) {
+        Optional<User> user = userRepository.findByUsername(username);
+        if (user.isPresent()) {
+            List<DevicePair> devicePairs= devicePairRepository.findByUserId(user.get().getUserId());
+            return devicePairs.stream().anyMatch(devicePair -> devicePair.getDeviceId().equals(deviceId));
+        }
+        return false;
+    }
 }

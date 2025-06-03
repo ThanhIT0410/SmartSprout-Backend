@@ -42,7 +42,7 @@ public class UserRegisterService {
         pair.setDeviceName(deviceName);
         pair.setDeviceId(deviceId);
 
-        String topic = "u" + pair.getUserId() + "/d" + pair.getDeviceId() + "-" + pair.getDeviceName();
+        String topic = "sensor/" + pair.getDeviceId();
         pair.setTopic(topic);
         devicePairRepository.save(pair);
         return topic;
