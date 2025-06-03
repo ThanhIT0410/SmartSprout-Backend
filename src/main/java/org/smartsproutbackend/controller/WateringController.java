@@ -35,10 +35,10 @@ public class WateringController {
      *
      * @param authHeader request with header {"Authorization": 'Bearer ${token}'}
      * @param request (String deviceId, String deviceName, int duration)
-     * @return watering
+     * @return start watering
      */
-    @PostMapping("/immediate")
-    public ResponseEntity<String> immediatelyTriggerWatering(@RequestHeader("Authorization") String authHeader,
+    @PostMapping("/start")
+    public ResponseEntity<String> startWatering(@RequestHeader("Authorization") String authHeader,
                                                              @RequestBody WateringTriggerRequest request) {
         String token = authHeader.replace("Bearer ", "");
         String username = tokenService.extractUsername(token);
@@ -47,12 +47,39 @@ public class WateringController {
         }
 
         try {
-            wateringService.triggerWatering(
+            wateringService.startWatering(
                     request.getDeviceId(),
                     request.getDeviceName(),
                     request.getDuration()
             );
-            return ResponseEntity.ok("Watering successfully");
+            return ResponseEntity.ok("Start watering successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+    }
+
+    /**
+     *
+     * @param authHeader request with header {"Authorization": 'Bearer ${token}'}
+     * @param request (String deviceId, String deviceName, int duration = 0)
+     * @return stop watering
+     */
+    @PostMapping("/stop")
+    public ResponseEntity<String> stopWatering(@RequestHeader("Authorization") String authHeader,
+                                                @RequestBody WateringTriggerRequest request) {
+        String token = authHeader.replace("Bearer ", "");
+        String username = tokenService.extractUsername(token);
+        if (!accessControlService.userHasAccessToDevice(username, request.getDeviceId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You do not have access to this device");
+        }
+
+        try {
+            wateringService.stopWatering(
+                    request.getDeviceId(),
+                    request.getDeviceName()
+            );
+            return ResponseEntity.ok("Stop watering successfully");
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(e.getMessage());
