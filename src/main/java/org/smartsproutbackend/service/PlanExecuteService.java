@@ -48,7 +48,7 @@ public class PlanExecuteService {
 
             WateringPlan representativePlan = devicePlans.getFirst();
 
-            wateringService.triggerWatering(
+            wateringService.startWatering(
                     representativePlan.getDeviceId(),
                     representativePlan.getDeviceName(),
                     representativePlan.getDuration()
