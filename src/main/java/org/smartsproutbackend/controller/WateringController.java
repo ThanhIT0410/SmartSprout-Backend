@@ -2,11 +2,9 @@ package org.smartsproutbackend.controller;
 
 import org.smartsproutbackend.dto.WateringPlanRequest;
 import org.smartsproutbackend.dto.WateringTriggerRequest;
+import org.smartsproutbackend.entity.WateringLog;
 import org.smartsproutbackend.entity.WateringPlan;
-import org.smartsproutbackend.service.AccessControlService;
-import org.smartsproutbackend.service.PlanSavingService;
-import org.smartsproutbackend.service.TokenService;
-import org.smartsproutbackend.service.WateringService;
+import org.smartsproutbackend.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +24,9 @@ public class WateringController {
     private PlanSavingService planSavingService;
 
     @Autowired
+    private RecentLogServices recentLogServices;
+
+    @Autowired
     private TokenService tokenService;
 
     @Autowired
@@ -35,10 +36,10 @@ public class WateringController {
      *
      * @param authHeader request with header {"Authorization": 'Bearer ${token}'}
      * @param request (String deviceId, String deviceName, int duration)
-     * @return watering
+     * @return start watering
      */
-    @PostMapping("/immediate")
-    public ResponseEntity<String> immediatelyTriggerWatering(@RequestHeader("Authorization") String authHeader,
+    @PostMapping("/start")
+    public ResponseEntity<String> startWatering(@RequestHeader("Authorization") String authHeader,
                                                              @RequestBody WateringTriggerRequest request) {
         String token = authHeader.replace("Bearer ", "");
         String username = tokenService.extractUsername(token);
@@ -47,16 +48,61 @@ public class WateringController {
         }
 
         try {
-            wateringService.triggerWatering(
+            wateringService.startWatering(
                     request.getDeviceId(),
                     request.getDeviceName(),
                     request.getDuration()
             );
-            return ResponseEntity.ok("Watering successfully");
+            return ResponseEntity.ok("Start watering successfully");
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(e.getMessage());
         }
+    }
+
+    /**
+     *
+     * @param authHeader request with header {"Authorization": 'Bearer ${token}'}
+     * @param request (String deviceId, String deviceName, int duration = 0)
+     * @return stop watering
+     */
+    @PostMapping("/stop")
+    public ResponseEntity<String> stopWatering(@RequestHeader("Authorization") String authHeader,
+                                                @RequestBody WateringTriggerRequest request) {
+        String token = authHeader.replace("Bearer ", "");
+        String username = tokenService.extractUsername(token);
+        if (!accessControlService.userHasAccessToDevice(username, request.getDeviceId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You do not have access to this device");
+        }
+
+        try {
+            wateringService.stopWatering(
+                    request.getDeviceId(),
+                    request.getDeviceName()
+            );
+            return ResponseEntity.ok("Stop watering successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+    }
+
+    /**
+     *
+     * @param authHeader request with header {"Authorization": 'Bearer ${token}'}
+     * @param deviceId
+     * @return list of recent watering logs
+     */
+    @GetMapping("/recent-log")
+    public ResponseEntity<?> getRecentLogs(@RequestHeader("Authorization") String authHeader, @RequestParam String deviceId) {
+        String token = authHeader.replace("Bearer ", "");
+        String username = tokenService.extractUsername(token);
+        if (!accessControlService.userHasAccessToDevice(username, deviceId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You do not have access to this device");
+        }
+
+        List<WateringLog> logs = recentLogServices.getRecentLogs(deviceId);
+        return ResponseEntity.ok(logs);
     }
 
     /**

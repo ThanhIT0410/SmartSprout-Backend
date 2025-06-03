@@ -1,9 +1,7 @@
 package org.smartsproutbackend.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+import org.smartsproutbackend.enums.WateringOperation;
 
 import java.time.LocalDateTime;
 
@@ -16,6 +14,9 @@ public class WateringLog {
 
     private String deviceId;
     private String deviceName;
+
+    @Enumerated(EnumType.STRING)
+    private WateringOperation operation;
     private LocalDateTime executeTime;
     private int duration;
 
@@ -41,6 +42,14 @@ public class WateringLog {
 
     public void setDeviceName(String deviceName) {
         this.deviceName = deviceName;
+    }
+
+    public WateringOperation getOperation() {
+        return operation;
+    }
+
+    public void setOperation(WateringOperation operation) {
+        this.operation = operation;
     }
 
     public LocalDateTime getExecuteTime() {

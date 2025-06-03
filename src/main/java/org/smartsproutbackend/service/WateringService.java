@@ -1,6 +1,7 @@
 package org.smartsproutbackend.service;
 
 import org.smartsproutbackend.entity.WateringLog;
+import org.smartsproutbackend.enums.WateringOperation;
 import org.smartsproutbackend.mqtt.MqttClientSingleton;
 import org.smartsproutbackend.repository.WateringLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,34 +18,35 @@ public class WateringService {
     @Autowired
     private MqttClientSingleton mqttClientSingleton;
 
-    public void triggerWatering(String deviceId, String deviceName, int duration) {
+    public void startWatering(String deviceId, String deviceName, int duration) {
         try {
             String topic = "watering/" + deviceId;
-            String startPayload = "{\"action\":\"start\"}";
+            String startPayload = String.format("{\"action\":\"start\", \"duration\": %d}", duration);
             mqttClientSingleton.publishToTopic(topic, startPayload);
-            logWatering(deviceId, deviceName, duration);
-            new Thread(() -> {
-                try {
-                    Thread.sleep(duration * 60_000L);
-                    String endPayload = "{\"action\":\"end\"}";
-                    mqttClientSingleton.publishToTopic(topic, endPayload);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }).start();
-
+            logWatering(deviceId, deviceName, WateringOperation.START, duration);
         } catch (Exception e) {
             throw new RuntimeException("Error triggering watering", e);
         }
     }
 
-    private void logWatering(String deviceId, String deviceName, int duration) {
+    public void stopWatering(String deviceId, String deviceName) {
+        try {
+            String topic = "watering/" + deviceId;
+            String stopPayload = "{\"action\":\"stop\"}";
+            mqttClientSingleton.publishToTopic(topic, stopPayload);
+            logWatering(deviceId, deviceName, WateringOperation.STOP, 0);
+        } catch (Exception e) {
+            throw new RuntimeException("Error triggering watering", e);
+        }
+    }
+
+    private void logWatering(String deviceId, String deviceName, WateringOperation operation, int duration) {
         WateringLog wateringLog = new WateringLog();
         wateringLog.setDeviceId(deviceId);
         wateringLog.setDeviceName(deviceName);
-        wateringLog.setDuration(duration);
+        wateringLog.setOperation(operation);
         wateringLog.setExecuteTime(LocalDateTime.now());
+        wateringLog.setDuration(duration);
         wateringLogRepository.save(wateringLog);
     }
-
 }
