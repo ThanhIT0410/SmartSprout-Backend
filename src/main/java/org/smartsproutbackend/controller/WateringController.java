@@ -4,6 +4,7 @@ import org.smartsproutbackend.dto.WateringPlanRequest;
 import org.smartsproutbackend.dto.WateringTriggerRequest;
 import org.smartsproutbackend.entity.WateringLog;
 import org.smartsproutbackend.entity.WateringPlan;
+import org.smartsproutbackend.exception.PlanNotFoundException;
 import org.smartsproutbackend.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -135,6 +136,7 @@ public class WateringController {
      *      *                  private Integer intervalDays, private Set<DayOfWeek> weekDays, int duration;
      *      *                  private boolean active;
      * @return updated plan
+     * @throws PlanNotFoundException if planId not found
      */
     @PutMapping("/change-plan/{planId}")
     public ResponseEntity<?> changeSchedule(@RequestHeader("Authorization") String authHeader,
@@ -146,8 +148,12 @@ public class WateringController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You do not have access to this device");
         }
 
-        WateringPlan plan = planSavingService.updatePlan(planId, request);
-        return ResponseEntity.ok(plan);
+        try {
+            WateringPlan plan = planSavingService.updatePlan(planId, request);
+            return ResponseEntity.ok(plan);
+        } catch (PlanNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     /**
