@@ -2,8 +2,10 @@ package org.smartsproutbackend.service;
 
 import org.smartsproutbackend.entity.WateringLog;
 import org.smartsproutbackend.enums.WateringOperation;
+import org.smartsproutbackend.exception.DeviceAlreadyExecutingException;
 import org.smartsproutbackend.mqtt.MqttClientSingleton;
 import org.smartsproutbackend.repository.WateringLogRepository;
+import org.smartsproutbackend.statemanager.WateringStateManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,17 +15,26 @@ import java.time.LocalDateTime;
 public class WateringService {
 
     @Autowired
+    private WateringStateManager wateringStateManager;
+
+    @Autowired
     private WateringLogRepository wateringLogRepository;
 
     @Autowired
     private MqttClientSingleton mqttClientSingleton;
 
     public void startWatering(String deviceId, String deviceName, int duration) {
+        if (wateringStateManager.isExecuting(deviceId)) {
+            LocalDateTime endTime = wateringStateManager.getEndTime(deviceId);
+            throw new DeviceAlreadyExecutingException(endTime);
+        }
+
         try {
             String topic = "watering/" + deviceId;
             String startPayload = String.format("{\"action\":\"start\", \"duration\": %d}", duration);
             mqttClientSingleton.publishToTopic(topic, startPayload);
             logWatering(deviceId, deviceName, WateringOperation.START, duration);
+            wateringStateManager.markAsExecuting(deviceId, duration);
         } catch (Exception e) {
             throw new RuntimeException("Error triggering watering", e);
         }

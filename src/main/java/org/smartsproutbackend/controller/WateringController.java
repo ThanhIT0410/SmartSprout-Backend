@@ -4,6 +4,7 @@ import org.smartsproutbackend.dto.WateringPlanRequest;
 import org.smartsproutbackend.dto.WateringTriggerRequest;
 import org.smartsproutbackend.entity.WateringLog;
 import org.smartsproutbackend.entity.WateringPlan;
+import org.smartsproutbackend.exception.DeviceAlreadyExecutingException;
 import org.smartsproutbackend.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/api/watering")
@@ -37,9 +39,10 @@ public class WateringController {
      * @param authHeader request with header {"Authorization": 'Bearer ${token}'}
      * @param request (String deviceId, String deviceName, int duration)
      * @return start watering
+     * @throws DeviceAlreadyExecutingException (LocalDateTime endTime) if this device is already watering until endTime
      */
     @PostMapping("/start")
-    public ResponseEntity<String> startWatering(@RequestHeader("Authorization") String authHeader,
+    public ResponseEntity<?> startWatering(@RequestHeader("Authorization") String authHeader,
                                                              @RequestBody WateringTriggerRequest request) {
         String token = authHeader.replace("Bearer ", "");
         String username = tokenService.extractUsername(token);
@@ -54,7 +57,13 @@ public class WateringController {
                     request.getDuration()
             );
             return ResponseEntity.ok("Start watering successfully");
-        } catch (RuntimeException e) {
+        } catch (DeviceAlreadyExecutingException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of(
+                            "message", e.getMessage(),
+                            "endTime", e.getEndTime()));
+        }
+        catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(e.getMessage());
         }
