@@ -174,4 +174,30 @@ public class WateringController {
         List<WateringPlan> allPlans = planSavingService.getAllPlans(deviceId);
         return ResponseEntity.ok(allPlans);
     }
+
+    /**
+     *
+     * @param authHeader request with header {"Authorization": 'Bearer ${token}'}
+     * @param planId
+     * @param deviceId
+     * @return Delete plan successfully
+     * @throws PlanNotFoundException if planId not found
+     */
+    @DeleteMapping("/delete-plan/{planId}")
+    public ResponseEntity<?> deleteSchedule(@RequestHeader("Authorization") String authHeader,
+                                            @PathVariable Long planId,
+                                            @RequestParam String deviceId) {
+        String token = authHeader.replace("Bearer ", "");
+        String username = tokenService.extractUsername(token);
+        if (!accessControlService.userHasAccessToDevice(username, deviceId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You do not have access to this device");
+        }
+
+        try {
+            planSavingService.deletePlan(planId);
+            return ResponseEntity.ok("Delete plan successfully");
+        } catch (PlanNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
 }

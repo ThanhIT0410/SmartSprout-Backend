@@ -50,4 +50,10 @@ public class PlanSavingService {
     public List<WateringPlan> getAllPlans(String deviceId) {
         return wateringPlanRepository.findByDeviceId(deviceId);
     }
+
+    public void deletePlan(Long planId) throws PlanNotFoundException {
+        WateringPlan plan = wateringPlanRepository.findById(planId)
+                .orElseThrow(() -> new PlanNotFoundException("Plan not found with ID: " + planId));
+        wateringPlanRepository.delete(plan);
+    }
 }
