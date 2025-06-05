@@ -34,7 +34,7 @@ public class PlanExecuteService {
 
         List<WateringPlan> runnablePlans = plans.stream()
                 .filter(WateringPlan::isActive)
-                .filter(p -> p.getTime().equals(now))
+                .filter(p -> !now.isBefore(p.getTime()) && now.isBefore(p.getTime().plusMinutes(1)))
                 .filter(p -> runToday(p, today, dayOfWeek))
                 .filter(p -> p.getLastExecutedDate() == null || !p.getLastExecutedDate().equals(today))
                 .toList();
