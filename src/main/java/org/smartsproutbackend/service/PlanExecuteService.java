@@ -30,6 +30,8 @@ public class PlanExecuteService {
         LocalDate today = LocalDate.now();
         DayOfWeek dayOfWeek = today.getDayOfWeek();
 
+        System.out.println("It is currently " + today + " and " + now);
+
         List<WateringPlan> plans = wateringPlanRepository.findAll();
 
         List<WateringPlan> runnablePlans = plans.stream()
@@ -41,6 +43,8 @@ public class PlanExecuteService {
 
         Map<String, List<WateringPlan>> plansByDevice = runnablePlans.stream()
                 .collect(Collectors.groupingBy(WateringPlan::getDeviceId));
+
+        System.out.println("Running plans: " + plansByDevice);
 
         for (Map.Entry<String, List<WateringPlan>> entry : plansByDevice.entrySet()) {
             String deviceId = entry.getKey();
