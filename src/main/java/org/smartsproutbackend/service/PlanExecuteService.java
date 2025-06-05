@@ -24,7 +24,7 @@ public class PlanExecuteService {
     @Autowired
     private WateringService wateringService;
 
-    @Scheduled(fixedRate = 60_000)
+    @Scheduled(fixedRate = 30_000)
     public void checkAndTriggerWateringPlan() {
         LocalTime now = LocalTime.now();
         LocalDate today = LocalDate.now();
@@ -36,7 +36,7 @@ public class PlanExecuteService {
 
         List<WateringPlan> runnablePlans = plans.stream()
                 .filter(WateringPlan::isActive)
-                .filter(p -> !now.isBefore(p.getTime()) && now.isBefore(p.getTime().plusMinutes(1)))
+                .filter(p -> !now.isBefore(p.getTime()) && now.isBefore(p.getTime().plusSeconds(30)))
                 .filter(p -> runToday(p, today, dayOfWeek))
                 .filter(p -> p.getLastExecutedDate() == null || !p.getLastExecutedDate().equals(today))
                 .toList();
