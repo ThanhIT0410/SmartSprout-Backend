@@ -23,6 +23,8 @@ public class WateringPlan {
     private Integer intervalDays; // Nếu repeatType = EVERY_X_DAYS
 
     @ElementCollection
+    @CollectionTable(name = "watering_plan_week_days", joinColumns = @JoinColumn(name = "plan_id"))
+    @Column(name = "week_day")
     @Enumerated(EnumType.STRING)
     private Set<DayOfWeek> weekDays;
 
