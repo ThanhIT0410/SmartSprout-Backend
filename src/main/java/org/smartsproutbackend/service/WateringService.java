@@ -23,7 +23,7 @@ public class WateringService {
     public void startWatering(String deviceId, String deviceName, int duration) {
         try {
             LocalDateTime now = LocalDateTime.now();
-            Optional<WateringLog> currentLog = wateringLogRepository.findTopByDeviceIdOrderByExecuteTimeDesc(deviceId);
+            Optional<WateringLog> currentLog = wateringLogRepository.findTopByDeviceIdAndOperationOrderByExecuteTimeDesc(deviceId, WateringOperation.START);
             if (currentLog.isPresent()) {
                 WateringLog log = currentLog.get();
                 LocalDateTime previousEnd = log.getExecuteTime().plusSeconds(log.getDuration());
@@ -50,7 +50,7 @@ public class WateringService {
             mqttClientSingleton.publishToTopic(topic, stopPayload);
             logWatering(deviceId, deviceName, WateringOperation.STOP, 0);
 
-            Optional<WateringLog> currentLog = wateringLogRepository.findTopByDeviceIdOrderByExecuteTimeDesc(deviceId);
+            Optional<WateringLog> currentLog = wateringLogRepository.findTopByDeviceIdAndOperationOrderByExecuteTimeDesc(deviceId, WateringOperation.START);
             if (currentLog.isPresent()) {
                 WateringLog log = currentLog.get();
                 long newDuration = Duration.between(log.getExecuteTime(), LocalDateTime.now()).getSeconds();

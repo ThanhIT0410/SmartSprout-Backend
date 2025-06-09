@@ -9,5 +9,5 @@ import java.util.Optional;
 
 public interface WateringLogRepository extends JpaRepository<WateringLog, Long> {
     List<WateringLog> findTop10ByDeviceIdAndOperationOrderByExecuteTimeDesc(String deviceId, WateringOperation operation);
-    Optional<WateringLog> findTopByDeviceIdOrderByExecuteTimeDesc(String deviceId);
+    Optional<WateringLog> findTopByDeviceIdAndOperationOrderByExecuteTimeDesc(String deviceId, WateringOperation operation);
 }
