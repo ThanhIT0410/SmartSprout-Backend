@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -40,14 +41,31 @@ public class UserLoginService {
         return Optional.empty();
     }
 
-    public Map<String, String> findDevicePairs(String username) {
+    public List<DevicePair> findDevicePairs(String username) {
         return userRepository.findByUsername(username)
                 .map(user -> devicePairRepository.findByUserId(user.getUserId()))
                 .orElse(Collections.emptyList())
                 .stream()
-                .collect(Collectors.toMap(
-                        DevicePair::getDeviceName,
-                        DevicePair::getTopic
-                ));
+                .toList();
+    }
+
+    public boolean deleteDevice(String username, String topic) {
+        Optional<User> userOptional = userRepository.findByUsername(username);
+        if (userOptional.isEmpty()) {
+            return false;
+        }
+
+        Optional<DevicePair> devicePairOptional = devicePairRepository.findByTopic(topic);
+        if (devicePairOptional.isEmpty()) {
+            return false;
+        }
+
+        DevicePair devicePair = devicePairOptional.get();
+        if (!devicePair.getUserId().equals(userOptional.get().getUserId())) {
+            return false;
+        }
+
+        devicePairRepository.delete(devicePair);
+        return true;
     }
 }
