@@ -53,6 +53,7 @@ public class WateringService {
             Optional<WateringLog> currentLog = wateringLogRepository.findTopByDeviceIdAndOperationOrderByExecuteTimeDesc(deviceId, WateringOperation.START);
             if (currentLog.isPresent()) {
                 WateringLog log = currentLog.get();
+                System.out.println("WateringLog: {id=" + log.getLogId() + ", deviceId=" + log.getDeviceId() + ", deviceName=" + log.getDeviceName() + ", operation=" + log.getOperation() + ", executeTime=" + log.getExecuteTime() + ", duration=" + log.getDuration() + "}");
                 long newDuration = Duration.between(log.getExecuteTime(), LocalDateTime.now()).getSeconds();
                 log.setDuration((int) newDuration);
                 wateringLogRepository.save(log);
