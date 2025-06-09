@@ -24,7 +24,7 @@ public class WateringService {
     private MqttClientSingleton mqttClientSingleton;
 
     public void startWatering(String deviceId, String deviceName, int duration) {
-        if (wateringStateManager.tryMarkAsExecuting(deviceId, duration)) {
+        if (!wateringStateManager.tryMarkAsExecuting(deviceId, duration)) {
             LocalDateTime endTime = wateringStateManager.getEndTime(deviceId);
             throw new DeviceAlreadyExecutingException(endTime);
         }
