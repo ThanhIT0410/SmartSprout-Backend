@@ -36,6 +36,18 @@ public class WateringPlan {
     private LocalDate startDate;
     private LocalDate lastExecutedDate;
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof WateringPlan)) return false;
+        return this.getPlanId() != null && this.getPlanId().equals(((WateringPlan) o).getPlanId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getPlanId() != null ? getPlanId().hashCode() : 0;
+    }
+
     public Long getPlanId() {
         return planId;
     }

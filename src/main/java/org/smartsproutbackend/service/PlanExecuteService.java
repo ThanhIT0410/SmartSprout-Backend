@@ -1,6 +1,7 @@
 package org.smartsproutbackend.service;
 
 import org.smartsproutbackend.entity.WateringPlan;
+import org.smartsproutbackend.exception.DeviceAlreadyExecutingException;
 import org.smartsproutbackend.repository.WateringPlanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -13,6 +14,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,6 +26,8 @@ public class PlanExecuteService {
     @Autowired
     private WateringService wateringService;
 
+    private final Map<WateringPlan, Integer> retryCount = new ConcurrentHashMap<>();
+
     @Scheduled(fixedRate = 30_000)
     public void checkAndTriggerWateringPlan() {
         LocalTime now = LocalTime.now();
@@ -31,6 +35,25 @@ public class PlanExecuteService {
         DayOfWeek dayOfWeek = today.getDayOfWeek();
 
         System.out.println("It is currently " + today + " and " + now);
+
+        // Retry
+        Set<WateringPlan> retryPlans = retryCount.keySet();
+        for (WateringPlan plan : retryPlans) {
+            try {
+                wateringService.startWatering(
+                        plan.getDeviceId(),
+                        plan.getDeviceName(),
+                        plan.getDuration()
+                );
+                plan.setLastExecutedDate(today);
+                wateringPlanRepository.save(plan);
+                retryCount.remove(plan);
+            } catch (DeviceAlreadyExecutingException e) {
+                int retry = retryCount.get(plan);
+                if (retry < 10) retryCount.put(plan, retry + 1);
+                else retryCount.remove(plan);
+            }
+        }
 
         List<WateringPlan> plans = wateringPlanRepository.findAll();
 
@@ -46,22 +69,20 @@ public class PlanExecuteService {
 
         System.out.println("Running plans: " + plansByDevice);
 
-        for (Map.Entry<String, List<WateringPlan>> entry : plansByDevice.entrySet()) {
-            String deviceId = entry.getKey();
-            List<WateringPlan> devicePlans = entry.getValue();
+        for (WateringPlan plan : runnablePlans) {
+            try {
+                wateringService.startWatering(
+                        plan.getDeviceId(),
+                        plan.getDeviceName(),
+                        plan.getDuration()
+                );
 
-            WateringPlan representativePlan = devicePlans.getFirst();
-
-            wateringService.startWatering(
-                    representativePlan.getDeviceId(),
-                    representativePlan.getDeviceName(),
-                    representativePlan.getDuration()
-            );
-
-            for (WateringPlan plan : devicePlans) {
                 plan.setLastExecutedDate(today);
+                wateringPlanRepository.save(plan);
+
+            } catch (DeviceAlreadyExecutingException e) {
+                retryCount.put(plan, 1);
             }
-            wateringPlanRepository.saveAll(devicePlans);
         }
     }
 

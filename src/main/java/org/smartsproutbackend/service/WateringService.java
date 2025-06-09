@@ -9,7 +9,9 @@ import org.smartsproutbackend.statemanager.WateringStateManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 public class WateringService {
@@ -45,6 +47,15 @@ public class WateringService {
             String stopPayload = "{\"action\":\"stop\"}";
             mqttClientSingleton.publishToTopic(topic, stopPayload);
             logWatering(deviceId, deviceName, WateringOperation.STOP, 0);
+            boolean stopped = wateringStateManager.tryMarkAsStopped(deviceId);
+
+            Optional<WateringLog> optLog = wateringLogRepository.findTopByDeviceIdOrderByExecuteTimeDesc(deviceId);
+            if (optLog.isPresent()) {
+                WateringLog log = optLog.get();
+                long newDuration = Duration.between(log.getExecuteTime(), LocalDateTime.now()).getSeconds();
+                log.setDuration((int) newDuration);
+                wateringLogRepository.save(log);
+            }
         } catch (Exception e) {
             throw new RuntimeException("Error triggering watering", e);
         }

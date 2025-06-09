@@ -29,6 +29,11 @@ public class WateringStateManager {
         return true;
     }
 
+    public synchronized boolean tryMarkAsStopped(String deviceId) {
+        LocalDateTime removed = wateringStates.remove(deviceId);
+        return removed != null;
+    }
+
     public LocalDateTime getEndTime(String deviceId) {
         return wateringStates.get(deviceId);
     }
