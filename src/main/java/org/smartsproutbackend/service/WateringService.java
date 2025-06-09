@@ -24,7 +24,7 @@ public class WateringService {
     private MqttClientSingleton mqttClientSingleton;
 
     public void startWatering(String deviceId, String deviceName, int duration) {
-        if (wateringStateManager.isExecuting(deviceId)) {
+        if (wateringStateManager.tryMarkAsExecuting(deviceId, duration)) {
             LocalDateTime endTime = wateringStateManager.getEndTime(deviceId);
             throw new DeviceAlreadyExecutingException(endTime);
         }
@@ -34,7 +34,6 @@ public class WateringService {
             String startPayload = String.format("{\"action\":\"start\", \"duration\": %d}", duration);
             mqttClientSingleton.publishToTopic(topic, startPayload);
             logWatering(deviceId, deviceName, WateringOperation.START, duration);
-            wateringStateManager.markAsExecuting(deviceId, duration);
         } catch (Exception e) {
             throw new RuntimeException("Error triggering watering", e);
         }

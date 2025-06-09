@@ -15,9 +15,18 @@ public class WateringStateManager {
         return wateringStates.containsKey(deviceId) && LocalDateTime.now().isBefore(wateringStates.get(deviceId));
     }
 
-    public void markAsExecuting(String deviceId, int duration) {
-        LocalDateTime endTime = LocalDateTime.now().plusSeconds(duration);
+    public synchronized boolean tryMarkAsExecuting(String deviceId, int duration) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime existingEnd = wateringStates.get(deviceId);
+        System.out.println("It is now: " + now
+                + "; Last endtime of this device: " + existingEnd
+                + "; State of device " + deviceId + " : " + ((existingEnd != null && now.isBefore(existingEnd)) ? "not executing" : "executing"));
+        if (existingEnd != null && now.isBefore(existingEnd)) {
+            return false;
+        }
+        LocalDateTime endTime = now.plusSeconds(duration);
         wateringStates.put(deviceId, endTime);
+        return true;
     }
 
     public LocalDateTime getEndTime(String deviceId) {
