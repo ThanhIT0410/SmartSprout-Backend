@@ -7,7 +7,9 @@ import org.smartsproutbackend.repository.WateringLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 public class WateringService {
@@ -20,6 +22,18 @@ public class WateringService {
 
     public void startWatering(String deviceId, String deviceName, int duration) {
         try {
+            LocalDateTime now = LocalDateTime.now();
+            Optional<WateringLog> currentLog = wateringLogRepository.findTopByDeviceIdOrderByExecuteTimeDesc(deviceId);
+            if (currentLog.isPresent()) {
+                WateringLog log = currentLog.get();
+                LocalDateTime previousEnd = log.getExecuteTime().plusSeconds(log.getDuration());
+                if (previousEnd.isAfter(now)) {
+                    long newDuration = Duration.between(log.getExecuteTime(), now).getSeconds();
+                    log.setDuration((int) newDuration);
+                    wateringLogRepository.save(log);
+                }
+            }
+
             String topic = "watering/" + deviceId;
             String startPayload = String.format("{\"action\":\"start\", \"duration\": %d}", duration);
             mqttClientSingleton.publishToTopic(topic, startPayload);
@@ -35,6 +49,14 @@ public class WateringService {
             String stopPayload = "{\"action\":\"stop\"}";
             mqttClientSingleton.publishToTopic(topic, stopPayload);
             logWatering(deviceId, deviceName, WateringOperation.STOP, 0);
+
+            Optional<WateringLog> currentLog = wateringLogRepository.findTopByDeviceIdOrderByExecuteTimeDesc(deviceId);
+            if (currentLog.isPresent()) {
+                WateringLog log = currentLog.get();
+                long newDuration = Duration.between(log.getExecuteTime(), LocalDateTime.now()).getSeconds();
+                log.setDuration((int) newDuration);
+                wateringLogRepository.save(log);
+            }
         } catch (Exception e) {
             throw new RuntimeException("Error triggering watering", e);
         }
