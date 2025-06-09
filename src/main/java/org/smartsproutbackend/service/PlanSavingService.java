@@ -2,6 +2,7 @@ package org.smartsproutbackend.service;
 
 import org.smartsproutbackend.dto.WateringPlanRequest;
 import org.smartsproutbackend.entity.WateringPlan;
+import org.smartsproutbackend.exception.PlanNotFoundException;
 import org.smartsproutbackend.repository.WateringPlanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,9 +32,9 @@ public class PlanSavingService {
         return wateringPlanRepository.save(plan);
     }
 
-    public WateringPlan updatePlan(Long planId, WateringPlanRequest wateringPlanRequest) {
+    public WateringPlan updatePlan(Long planId, WateringPlanRequest wateringPlanRequest) throws PlanNotFoundException {
         WateringPlan plan = wateringPlanRepository.findById(planId)
-                .orElseThrow(() -> new RuntimeException("Plan not found"));
+                .orElseThrow(() -> new PlanNotFoundException("Plan not found with ID: " + planId));
         plan.setDeviceId(wateringPlanRequest.getDeviceId());
         plan.setDeviceName(wateringPlanRequest.getDeviceName());
         plan.setTime(wateringPlanRequest.getTime());
@@ -48,5 +49,11 @@ public class PlanSavingService {
 
     public List<WateringPlan> getAllPlans(String deviceId) {
         return wateringPlanRepository.findByDeviceId(deviceId);
+    }
+
+    public void deletePlan(Long planId) throws PlanNotFoundException {
+        WateringPlan plan = wateringPlanRepository.findById(planId)
+                .orElseThrow(() -> new PlanNotFoundException("Plan not found with ID: " + planId));
+        wateringPlanRepository.delete(plan);
     }
 }

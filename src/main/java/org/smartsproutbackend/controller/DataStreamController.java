@@ -24,8 +24,8 @@ public class DataStreamController {
     @Autowired
     private RecentMessageService recentMessageService;
 
-    @GetMapping("/recent")
-    public ResponseEntity<?> getRecent(@RequestParam String topic, @RequestHeader("Authorization") String authHeader) {
+    @GetMapping("/recent-data")
+    public ResponseEntity<?> getRecentData(@RequestParam String topic, @RequestHeader("Authorization") String authHeader) {
         String token = authHeader.replace("Bearer ", "");
         String username = tokenService.extractUsername(token);
 

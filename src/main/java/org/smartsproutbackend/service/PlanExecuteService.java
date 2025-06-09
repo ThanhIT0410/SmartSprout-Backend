@@ -24,23 +24,27 @@ public class PlanExecuteService {
     @Autowired
     private WateringService wateringService;
 
-    @Scheduled(fixedRate = 60_000)
+    @Scheduled(fixedRate = 30_000)
     public void checkAndTriggerWateringPlan() {
         LocalTime now = LocalTime.now();
         LocalDate today = LocalDate.now();
         DayOfWeek dayOfWeek = today.getDayOfWeek();
 
+        System.out.println("It is currently " + today + " and " + now);
+
         List<WateringPlan> plans = wateringPlanRepository.findAll();
 
         List<WateringPlan> runnablePlans = plans.stream()
                 .filter(WateringPlan::isActive)
-                .filter(p -> p.getTime().equals(now))
+                .filter(p -> !now.isBefore(p.getTime()) && now.isBefore(p.getTime().plusSeconds(30)))
                 .filter(p -> runToday(p, today, dayOfWeek))
                 .filter(p -> p.getLastExecutedDate() == null || !p.getLastExecutedDate().equals(today))
                 .toList();
 
         Map<String, List<WateringPlan>> plansByDevice = runnablePlans.stream()
                 .collect(Collectors.groupingBy(WateringPlan::getDeviceId));
+
+        System.out.println("Running plans: " + plansByDevice);
 
         for (Map.Entry<String, List<WateringPlan>> entry : plansByDevice.entrySet()) {
             String deviceId = entry.getKey();

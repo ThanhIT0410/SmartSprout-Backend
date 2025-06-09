@@ -39,7 +39,7 @@ public class LoginController {
     /**
      *
      * @param authHeader request with header {"Authorization": 'Bearer ${token}'}
-     * @return map of DevicePair
+     * @return list of DevicePair
      */
     @GetMapping("/devices")
     public ResponseEntity<List<DevicePair>> getDevices(@RequestHeader("Authorization") String authHeader) {
