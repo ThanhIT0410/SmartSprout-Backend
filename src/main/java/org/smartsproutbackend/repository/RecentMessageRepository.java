@@ -14,4 +14,6 @@ public interface RecentMessageRepository extends JpaRepository<RecentMessage, Lo
     @Modifying
     @Transactional
     void deleteByTopicAndTimestampBefore(String topic, LocalDateTime cutoff);
+
+    List<RecentMessage> findByTopicAndTimestampBefore(String topic, LocalDateTime cutoff);
 }

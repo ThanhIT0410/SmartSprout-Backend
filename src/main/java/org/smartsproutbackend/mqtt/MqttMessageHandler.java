@@ -46,6 +46,16 @@ public class MqttMessageHandler implements MqttCallback {
         recentMessageRepository.save(msg);
 
         LocalDateTime cutoff = LocalDateTime.now().minus(Duration.ofMillis(MAXIMUM_MESSAGES * MESSAGE_TIME_LIMIT));
+        System.out.println("Cutoff time: " + cutoff);
+        List<RecentMessage> toBeRemoved = recentMessageRepository.findByTopicAndTimestampBefore(topic, cutoff);
+        if (!toBeRemoved.isEmpty()) {
+            System.out.println("[DELETION] Cutoff: " + cutoff);
+            for (RecentMessage m : toBeRemoved) {
+                System.out.println(" - Deleting message: id=" + m.getMsgId()
+                        + ", timestamp=" + m.getTimestamp()
+                        + ", topic=" + m.getTopic());
+            }
+        }
         recentMessageRepository.deleteByTopicAndTimestampBefore(topic, cutoff);
     }
 
