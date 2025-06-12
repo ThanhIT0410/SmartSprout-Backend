@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Component
 public class MqttMessageHandler implements MqttCallback {
@@ -48,20 +47,6 @@ public class MqttMessageHandler implements MqttCallback {
 
         LocalDateTime cutoff = LocalDateTime.now().minus(Duration.ofMillis(MAXIMUM_MESSAGES * MESSAGE_TIME_LIMIT));
         recentMessageRepository.deleteByTopicAndTimestampBefore(topic, cutoff);
-    }
-
-    public List<Map<String, Object>> getRecentMessages(String topic) {
-        return recentMessageRepository.findByTopicOrderByTimestampDesc(topic)
-                .stream()
-                .map(msg -> {
-                    Map<String, Object> result = new HashMap<>();
-                    result.put("air", msg.getAir());
-                    result.put("temp", msg.getTemp());
-                    result.put("soil", msg.getSoil());
-                    result.put("timestamp", msg.getTimestamp().toString());
-                    return result;
-                })
-                .collect(Collectors.toList());
     }
 
     private RecentMessage parseMessage(String topic, String json) throws Exception {
