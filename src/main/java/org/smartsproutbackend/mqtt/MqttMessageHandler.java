@@ -24,8 +24,6 @@ public class MqttMessageHandler implements MqttCallback {
     @Autowired
     private WebSocketPushService webSocketPushService;
 
-    private final int MAXIMUM_MESSAGES = 10;
-    private final int MESSAGE_TIME_LIMIT = 7_200_000; // 2 giờ
     private final int MESSAGE_INTERVAL = 60_000;
 
     @Override
@@ -44,19 +42,6 @@ public class MqttMessageHandler implements MqttCallback {
         if (Duration.between(msg.getTimestamp(), LocalDateTime.now()).toMillis() > MESSAGE_INTERVAL) return;
 
         recentMessageRepository.save(msg);
-
-        LocalDateTime cutoff = LocalDateTime.now().minus(Duration.ofMillis(MAXIMUM_MESSAGES * MESSAGE_TIME_LIMIT));
-        System.out.println("Cutoff time: " + cutoff);
-        List<RecentMessage> toBeRemoved = recentMessageRepository.findByTopicAndTimestampBefore(topic, cutoff);
-        if (!toBeRemoved.isEmpty()) {
-            System.out.println("[DELETION] Cutoff: " + cutoff);
-            for (RecentMessage m : toBeRemoved) {
-                System.out.println(" - Deleting message: id=" + m.getMsgId()
-                        + ", timestamp=" + m.getTimestamp()
-                        + ", topic=" + m.getTopic());
-            }
-        }
-        recentMessageRepository.deleteByTopicAndTimestampBefore(topic, cutoff);
     }
 
     private RecentMessage parseMessage(String topic, String json) throws Exception {
