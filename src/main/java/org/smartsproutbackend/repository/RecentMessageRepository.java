@@ -9,11 +9,5 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface RecentMessageRepository extends JpaRepository<RecentMessage, Long> {
-    List<RecentMessage> findByTopicOrderByTimestampDesc(String topic);
-
-    @Modifying
-    @Transactional
-    void deleteByTopicAndTimestampBefore(String topic, LocalDateTime cutoff);
-
-    List<RecentMessage> findByTopicAndTimestampBefore(String topic, LocalDateTime cutoff);
+    List<RecentMessage> findTop10ByTopicOrderByTimestampDesc(String topic);
 }

@@ -16,7 +16,7 @@ public class RecentMessageService {
     private RecentMessageRepository recentMessageRepository;
 
     public List<Map<String, Object>> getRecentMessages(String topic) {
-        return recentMessageRepository.findByTopicOrderByTimestampDesc(topic)
+        return recentMessageRepository.findTop10ByTopicOrderByTimestampDesc(topic)
                 .stream()
                 .map(msg -> {
                     Map<String, Object> result = new HashMap<>();
