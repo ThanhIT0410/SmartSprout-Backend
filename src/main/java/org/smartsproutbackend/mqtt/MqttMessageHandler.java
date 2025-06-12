@@ -27,6 +27,7 @@ public class MqttMessageHandler implements MqttCallback {
 
     private final int MAXIMUM_MESSAGES = 10;
     private final int MESSAGE_TIME_LIMIT = 7_200_000; // 2 giờ
+    private final int MESSAGE_INTERVAL = 60_000;
 
     @Override
     public void messageArrived(String topic, MqttMessage message) {
@@ -41,20 +42,12 @@ public class MqttMessageHandler implements MqttCallback {
 
         webSocketPushService.sendToTopic(topic, payload);
 
-        long nowMillis = System.currentTimeMillis();
-        long tsMillis = msg.getTimestamp().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-        if (nowMillis - tsMillis > 60_000) return;
+        if (Duration.between(msg.getTimestamp(), LocalDateTime.now()).toMillis() > MESSAGE_INTERVAL) return;
 
         recentMessageRepository.save(msg);
 
-        LocalDateTime cutoff = LocalDateTime.now().minus(Duration.ofMillis(MESSAGE_TIME_LIMIT));
+        LocalDateTime cutoff = LocalDateTime.now().minus(Duration.ofMillis(MAXIMUM_MESSAGES * MESSAGE_TIME_LIMIT));
         recentMessageRepository.deleteByTopicAndTimestampBefore(topic, cutoff);
-
-        List<RecentMessage> allRecent = recentMessageRepository.findByTopicOrderByTimestampDesc(topic);
-        if (allRecent.size() > MAXIMUM_MESSAGES) {
-            List<RecentMessage> toDelete = allRecent.subList(MAXIMUM_MESSAGES, allRecent.size());
-            recentMessageRepository.deleteAll(toDelete);
-        }
     }
 
     public List<Map<String, Object>> getRecentMessages(String topic) {
